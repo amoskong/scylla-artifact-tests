@@ -71,8 +71,8 @@ class ScyllaAptBackend(AptBackend):
 
     def __init__(self):
         process.run('ps aux|grep apt', verbose=True, shell=True)
-        process.run('lsof /var/lib/dpkg/lock', verbose=True, shell=True)
-        process.run('lsof /var/lib/dpkg/', verbose=True)
+        #process.run('lsof /var/lib/dpkg/lock', verbose=True, shell=True)
+        #process.run('lsof /var/lib/dpkg/', verbose=True, shell=True)
         process.run('sudo apt-get install -y apt-transport-https', shell=True)
         super(ScyllaAptBackend, self).__init__()
 
