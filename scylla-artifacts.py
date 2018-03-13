@@ -715,8 +715,15 @@ class ScyllaArtifactSanity(Test):
         self.run_cassandra_stress()
 
     def test_after_restart(self):
+        # check restart
+        if self.uuid:
+            version = self.version.replace('scylladb-', '')
+            last_id = self.cvdb.get_last_id(self.uuid, self.repoid, table='housekeeping.checkversion', filter="version like '{}%' and statuscode = 'r'".format(version))
         self.srv_manager.restart_services()
         self.srv_manager.wait_services_up()
+        # check restart
+        if self.uuid:
+            assert self.cvdb.check_new_record(self.uuid, self.repoid, last_id, table='housekeeping.checkversion', filter="version like '{}%' and statuscode = 'r'".format(version))
         self.run_nodetool()
         self.run_cassandra_stress()
 
