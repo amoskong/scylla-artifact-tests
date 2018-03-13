@@ -322,7 +322,14 @@ class ScyllaInstallGeneric(object):
             script_content = f.read()
         if '--no-cpuscaling-setup' in script_content:
             setup_cmd += ' --no-cpuscaling-setup'
+        # check setup
+        if self.uuid:
+            version = self.version.replace('scylladb-', '')
+            last_id = self.cvdb.get_last_id(self.uuid, self.repoid, table='housekeeping.checkversion', filter="version like '{}%' and statuscode = 'i'".format(version))
         process.run(setup_cmd, shell=True)
+        # check setup
+        if self.uuid:
+            assert self.cvdb.check_new_record(self.uuid, self.repoid, last_id, table='housekeeping.checkversion', filter="version like '{}%' and statuscode = 'i'".format(version))
 
         self.srv_manager.start_services()
         self.srv_manager.wait_services_up()
