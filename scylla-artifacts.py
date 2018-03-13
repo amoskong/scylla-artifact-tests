@@ -615,6 +615,8 @@ class ScyllaArtifactSanity(Test):
         self._log_collection_thread = threading.Thread(target=get_scylla_logs)
         self._log_collection_thread.start()
         sw_repo = self.params.get('sw_repo', default=None)
+        priv_repo_flag = re.findall("https://repositories.scylladb.com/scylla/repo/(.*scylladb-[\d\.]+).*\.\w+", self.sw_repo_src)
+        self.uuid, self.repoid, self.version = priv_repo_flag[0].split('/')
         ami = self.params.get('ami', default=False) is True
         TEST_PARAMS = self.params
 
@@ -661,6 +663,10 @@ class ScyllaArtifactSanity(Test):
             self.skip('Unsupported OS: %s' % detected_distro)
 
         installer.cvdb = self.cvdb
+        installer.uuid = self.uuid
+        installer.repoid = self.repoid
+        installer.version = self.version
+
         installer.run()
         os.mknod(self.get_setup_file_done())
 
