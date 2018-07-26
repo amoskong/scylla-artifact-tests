@@ -185,22 +185,6 @@ class InstallPackageError(Exception):
     pass
 
 
-def get_scylla_logs():
-    try:
-        journalctl_cmd = path.find_command('journalctl')
-        process.run('sudo %s -f --no-tail '
-                    '-u scylla-io-setup.service '
-                    '-u scylla-server.service '
-                    '-u scylla-ami-setup.service '
-                    '-u scylla-housekeeping-daily.service '
-                    '-u scylla-housekeeping-restart.service '
-                    '-u scylla-jmx.service' % journalctl_cmd,
-                    verbose=True, ignore_status=True)
-    except path.CmdNotFoundError:
-        process.run('tail -f /var/log/syslog | grep scylla', shell=True,
-                    ignore_status=True)
-
-
 class ScyllaServiceManager(object):
 
     def __init__(self):
@@ -656,10 +640,25 @@ class ScyllaArtifactSanity(Test):
         tmpdir = os.path.dirname(self.workdir)
         return os.path.join(tmpdir, 'scylla-setup-done')
 
+    def get_scylla_logs(self):
+        try:
+            journalctl_cmd = path.find_command('journalctl')
+            process.run('sudo %s -f --no-tail '
+                        '-u scylla-io-setup.service '
+                        '-u scylla-server.service '
+                        '-u scylla-ami-setup.service '
+                        '-u scylla-housekeeping-daily.service '
+                        '-u scylla-housekeeping-restart.service '
+                        '-u scylla-jmx.service' % journalctl_cmd,
+                        verbose=True, ignore_status=True)
+        except path.CmdNotFoundError:
+            process.run('tail -f /var/log/syslog | grep scylla', shell=True,
+                        ignore_status=True)
+
     def scylla_setup(self):
         global TEST_PARAMS
         # Let's start the logs thread before package install
-        self._log_collection_thread = threading.Thread(target=get_scylla_logs)
+        self._log_collection_thread = threading.Thread(target=self.get_scylla_logs)
         self._log_collection_thread.start()
         sw_repo = self.params.get('sw_repo', default=None)
         ami = self.params.get('ami', default=False) is True
