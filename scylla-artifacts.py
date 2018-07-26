@@ -635,6 +635,7 @@ class ScyllaArtifactSanity(Test):
     uuid = None
     repoid = None
     version = None
+    log_termination_event = None
 
     def get_setup_file_done(self):
         tmpdir = os.path.dirname(self.workdir)
@@ -649,14 +650,34 @@ class ScyllaArtifactSanity(Test):
                         '-u scylla-ami-setup.service '
                         '-u scylla-housekeeping-daily.service '
                         '-u scylla-housekeeping-restart.service '
-                        '-u scylla-jmx.service' % journalctl_cmd,
+                        '-u scylla-jmx.service &' % journalctl_cmd,
                         verbose=True, ignore_status=True)
         except path.CmdNotFoundError:
-            process.run('tail -f /var/log/syslog | grep scylla', shell=True,
+            process.run('tail -f /var/log/syslog | grep scylla &', shell=True,
                         ignore_status=True)
+        while True:
+            if self.log_termination_event.is_set():
+                break
+            # check scylla log here
+            try:
+                journalctl_cmd = path.find_command('journalctl')
+                result = process.run('sudo %s --no-tail '
+                                     '-u scylla-io-setup.service '
+                                     '-u scylla-server.service '
+                                     '-u scylla-ami-setup.service '
+                                     '-u scylla-housekeeping-daily.service '
+                                     '-u scylla-housekeeping-restart.service '
+                                     '-u scylla-jmx.service' % journalctl_cmd,
+                                     ignore_status=True)
+            except path.CmdNotFoundError:
+                result = process.run('cat /var/log/syslog | grep scylla', shell=True,
+                                     ignore_status=True)
+           if 'I/O Scheduler is not properly configured!' in result.stdout:
+               self.fail('setup failed') 
 
     def scylla_setup(self):
         global TEST_PARAMS
+        self.log_termination_event = threading.event()
         # Let's start the logs thread before package install
         self._log_collection_thread = threading.Thread(target=self.get_scylla_logs)
         self._log_collection_thread.start()
@@ -732,6 +753,11 @@ class ScyllaArtifactSanity(Test):
             assert self.cvdb, 'check version db must be connected for private repo'
         if not os.path.isfile(self.get_setup_file_done()):
             self.scylla_setup()
+
+    def tearDown(self):
+        self.log_termination_event.set()
+        if self._log_collection_thread:
+            self._log_collection_thread.join(timeout=30)
 
     def run_cassandra_stress(self):
         def check_output(result):
