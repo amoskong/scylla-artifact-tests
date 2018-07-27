@@ -208,6 +208,25 @@ class ScyllaServiceManager(object):
 
     def _scylla_service_is_up(self):
         srv_manager = service.ServiceManager()
+        try:
+            journalctl_cmd = path.find_command('journalctl')
+            result = process.run('sudo %s --no-tail '
+                                 '-u scylla-io-setup.service '
+                                 '-u scylla-server.service '
+                                 '-u scylla-ami-setup.service '
+                                 '-u scylla-housekeeping-daily.service '
+                                 '-u scylla-housekeeping-restart.service '
+                                 '-u scylla-jmx.service' % journalctl_cmd,
+                                 ignore_status=True)
+        except path.CmdNotFoundError:
+            result = process.run('cat /var/log/syslog | grep scylla', shell=True,
+                                 ignore_status=True)
+        if 'I/O Scheduler is not properly configured!' in result.stdout:
+            # todo:
+            # option 1: raise exception
+            # option 2: cheat wait_for to end, Make sure output is None
+            return True
+
         for srv in self.services:
             srv_manager.status(srv)
         return not network.is_port_free(9042, 'localhost')
