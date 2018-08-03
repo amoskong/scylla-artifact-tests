@@ -302,16 +302,24 @@ class ScyllaInstallGeneric(object):
     def run(self):
         wait.wait_for(self.sw_manager.upgrade, timeout=300, step=30,
                       text="Wait until system is up to date...")
-        # setup software repo and other environment before install test packages
-        pkgs = self.env_setup()
+        if not TEST_PARAMS.get('offline_install', default=False):
+            # setup software repo and other environment before install test packages
+            pkgs = self.env_setup()
         # check install
         if self.uuid:
             version = self.version.replace('scylladb-', '')
             last_id = self.cvdb.get_last_id(self.uuid, self.repoid, self.version, table='housekeeping.repodownload', add_filter="and file_name like 'scylla%server%{}%'".format(version))
-        for pkg in pkgs:
-            if not self.sw_manager.install(pkg):
-                e_msg = ('Package %s could not be installed '
-                         '(see logs for details)' % os.path.basename(pkg))
+        if TEST_PARAMS.get('offline_install', default=False):
+            sw_repo = TEST_PARAMS.get('sw_repo', default=None)
+            # generate offline install file from repo
+            # disable network / dns
+            # install pkg offline
+            self.offline_install(sw_repo)
+        else:
+            for pkg in pkgs:
+                if not self.sw_manager.install(pkg):
+                    e_msg = ('Package %s could not be installed '
+                             '(see logs for details)' % os.path.basename(pkg))
                 raise InstallPackageError(e_msg)
         # check install
         if self.uuid:
@@ -437,6 +445,13 @@ class ScyllaInstallUbuntu1404(ScyllaInstallDebian):
         self.sw_manager.upgrade()
         return [self.scylla_pkg()]
 
+   def offline_install(self, sw_repo):
+       process.run('git clone https://github.com/scylladb/scylla/')
+       process.run('cd scylla; ./dist/offline_installer/debian/build_offline_installer.sh --repo %s --suite trusty' % sw_repo)
+       process.run('sudo service network stop')
+       process.run('scylla/build/scylla_offline_installer.sh')
+       process.run('sudo service network start ')
+
 
 class ScyllaInstallUbuntu1604(ScyllaInstallDebian):
     def prepare_extend_repo(self):
@@ -452,6 +467,13 @@ class ScyllaInstallUbuntu1604(ScyllaInstallDebian):
         self.sw_manager.upgrade()
         return [self.scylla_pkg()]
 
+   def offline_install(self, sw_repo):
+       process.run('git clone https://github.com/scylladb/scylla/')
+       process.run('cd scylla; ./dist/offline_installer/debian/build_offline_installer.sh --repo %s --suite xenial' % sw_repo)
+       process.run('sudo systemctl stop network')
+       process.run('scylla/build/scylla_offline_installer.sh')
+       process.run('sudo systemctl start network')
+
 
 class ScyllaInstallUbuntu1804(ScyllaInstallDebian):
     def prepare_extend_repo(self):
@@ -466,6 +488,13 @@ class ScyllaInstallUbuntu1804(ScyllaInstallDebian):
         process.run('sudo apt-get update')
         self.sw_manager.upgrade()
         return [self.scylla_pkg()]
+
+   def offline_install(self, sw_repo):
+       process.run('git clone https://github.com/scylladb/scylla/')
+       process.run('cd scylla; ./dist/offline_installer/debian/build_offline_installer.sh --repo %s --suite bionic' % sw_repo)
+       process.run('sudo systemctl stop network')
+       process.run('scylla/build/scylla_offline_installer.sh')
+       process.run('sudo systemctl start network')
 
 
 class ScyllaInstallDebian8(ScyllaInstallDebian):
@@ -484,6 +513,13 @@ class ScyllaInstallDebian8(ScyllaInstallDebian):
         self.sw_manager.upgrade()
         return [self.scylla_pkg()]
 
+   def offline_install(self, sw_repo):
+       process.run('git clone https://github.com/scylladb/scylla/')
+       process.run('cd scylla; ./dist/offline_installer/debian/build_offline_installer.sh --repo %s --suite jessie' % sw_repo)
+       process.run('sudo systemctl stop network')
+       process.run('scylla/build/scylla_offline_installer.sh')
+       process.run('sudo systemctl start network')
+
 
 class ScyllaInstallDebian9(ScyllaInstallDebian):
     def prepare_extend_repo(self):
@@ -499,6 +535,13 @@ class ScyllaInstallDebian9(ScyllaInstallDebian):
         self.sw_manager.upgrade()
         return [self.scylla_pkg()]
 
+   def offline_install(self, sw_repo):
+       process.run('git clone https://github.com/scylladb/scylla/')
+       process.run('cd scylla; ./dist/offline_installer/debian/build_offline_installer.sh --repo %s --suite stretch' % sw_repo)
+       process.run('sudo systemctl stop network')
+       process.run('scylla/build/scylla_offline_installer.sh')
+       process.run('sudo systemctl start network')
+
 
 class ScyllaInstallFedora(ScyllaInstallGeneric):
 
@@ -513,6 +556,9 @@ class ScyllaInstallFedora22(ScyllaInstallFedora):
         self.download_scylla_repo()
         self.sw_manager.upgrade()
         return ['scylla']
+
+   def offline_install(self, sw_repo):
+       pass
 
 
 class ScyllaInstallCentOS(ScyllaInstallGeneric):
@@ -543,6 +589,13 @@ class ScyllaInstallCentOS7(ScyllaInstallCentOS):
         self.download_scylla_repo()
         self.sw_manager.upgrade()
         return [self.scylla_pkg()]
+
+   def offline_install(self, sw_repo):
+       process.run('git clone https://github.com/scylladb/scylla/')
+       process.run('cd scylla; ./dist/offline_installer/redhat/build_offline_installer.sh --repo %s' % sw_repo)
+       process.run('sudo systemctl stop network')
+       process.run('scylla/build/scylla_offline_installer.sh')
+       process.run('sudo systemctl start network')
 
 
 class ScyllaInstallAMI(ScyllaInstallGeneric):
