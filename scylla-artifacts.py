@@ -785,6 +785,7 @@ class ScyllaArtifactSanity(Test):
         process.run(nodetool)
 
     def verify_nvme_irq(self):
+        process.run('cat /proc/interrupts', verbose=True)
         content = file('/proc/interrupts').readlines()
         cpu_num = len(content[0].split())
         irq_info = []
@@ -816,6 +817,7 @@ class ScyllaArtifactSanity(Test):
         assert len(Counter(Counter(big_list).values())) == 1, 'The IRQs pined to each vcpu should be same.'
 
     def test_after_install(self):
+        process.run('cat /proc/interrupts', verbose=True)
         self.run_nodetool()
         self.run_cassandra_stress()
         if SCRIPTLET_FAILURE_LIST:
@@ -823,6 +825,7 @@ class ScyllaArtifactSanity(Test):
                       ",".join(SCRIPTLET_FAILURE_LIST))
 
     def test_after_stop_start(self):
+        process.run('cat /proc/interrupts', verbose=True)
         self.srv_manager.stop_services()
         self.srv_manager.start_services()
         self.srv_manager.wait_services_up()
@@ -830,6 +833,7 @@ class ScyllaArtifactSanity(Test):
         self.run_cassandra_stress()
 
     def test_after_restart(self):
+        process.run('cat /proc/interrupts', verbose=True)
         # check restart
         if self.uuid:
             version = self.version.replace('scylladb-', '')
