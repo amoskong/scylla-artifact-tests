@@ -678,6 +678,7 @@ class ScyllaArtifactSanity(Test):
     repoid = None
     version = None
     log = logging.getLogger('avocado.test')
+    irq_number
 
     def get_setup_file_done(self):
         tmpdir = os.path.dirname(self.workdir)
