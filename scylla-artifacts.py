@@ -801,7 +801,7 @@ class ScyllaArtifactSanity(Test):
             max_count = max(irq_count_list + [max_count])
             irq_info.append([irq_num, irq_name])
             result.append(irq_count_list)
-        self.log.debug('max_count is %d' % max_count)
+        self.log.debug('max_count of IRQ is %d' % max_count)
 
         big_list = []
         for idx, irq_count_list in enumerate(result):
