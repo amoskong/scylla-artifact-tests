@@ -1,3 +1,10 @@
+
+# MySQL account of checking version
+host: ''
+user: ''
+passwd: ''
+
+
 distro: !mux
     centos7:
         name: 'centos7'
@@ -23,6 +30,13 @@ distro: !mux
         pkginfo_url: 'https://repositories.scylladb.com/scylla/scylladb/amos-test-debian8/deb/debian/dists/jessie/scylladb-1.7/multiverse/binary-amd64/Packages.gz'
         redirect_url: 'https://s3.amazonaws.com/downloads.scylladb.com/deb/debian/dists/jessie/scylladb-1.7/multiverse/binary-amd64/Packages.gz'
 
-host: ''
-user: ''
-passwd: ''
+    ubuntu1804:
+        name: 'ubuntu1804'
+        sw_repo: 'https://repositories.scylladb.com/scylla/repo/amos-test-ubuntu18/ubuntu/scylladb-3.0-bionic.list'
+        pkginfo_url: 'https://repositories.scylladb.com/scylla/downloads/scylladb/amos-test-ubuntu18/scylla-enterprise/deb/ubuntu/scylladb-3.0/dists/bionic/multiverse/binary-amd64/Packages.gz'
+        redirect_url: 'https://s3.amazonaws.com/downloads.scylladb.com/downloads/scylla-enterprise/deb/ubuntu/scylladb-3.0/dists/bionic/multiverse/binary-amd64/Packages.gz'
+
+    debian9:
+        name: 'debian9'
+        sw_repo: 'https://repositories.scylladb.com/scylla/repo/amos-test-debian9/debian/scylladb-3.0-stretch.list'
+        pkginfo_url: 'https://repositories.scylladb.com/scylla/downloads/scylladb/amos-test-debian9/scylla-enterprise/deb/debian/scylladb-3.0/dists/stretch/non-free/binary-amd64/Packages.gz'
